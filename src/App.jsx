@@ -6,10 +6,12 @@ function App() {
   const [is2D, setIs2D] = useState(true)
 
   return (
-    <>
-      <button onClick={() => setIs2D((prev) => !prev)}>{is2D ? '2D' : '3D'}</button>
+    <main style={{ height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column' }}>
+      <button style={{ height: '50px' }} onClick={() => setIs2D((prev) => !prev)}>
+        {is2D ? '2D' : '3D'}
+      </button>
       {is2D ? <FloorDesigner /> : <RoomDesigner />}
-    </>
+    </main>
   )
 }
 

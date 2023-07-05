@@ -4,12 +4,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { DragControls } from 'three/addons/controls/DragControls.js'
-
-const size = 18
-const divisions = 10
-const windowWidth = window.innerWidth
-const windowHeight = window.innerHeight
+import { canvasDivisions, canvasSize, windowHeight, windowWidth } from '../constants/sizes'
 
 function RoomDesigner() {
   const init = () => {
@@ -36,7 +31,7 @@ function RoomDesigner() {
     directionalLight.position.set(1, 1, 1).normalize()
     scene.add(directionalLight)
 
-    const gridHelper = new THREE.GridHelper(size, divisions)
+    const gridHelper = new THREE.GridHelper(canvasSize, canvasDivisions)
     scene.add(gridHelper)
 
     camera.position.set(0, 0, 10)
@@ -45,35 +40,85 @@ function RoomDesigner() {
     return { controls, camera, renderer, scene }
   }
 
-  const loadModel = ({ scene, camera, renderer, controls }) => {
+  // const loadTexture = ({ scene }) => {
+  //   console.log('scene', scene)
+  //   const loader = new THREE.TextureLoader().setPath('/src/assets/')
+  //   loader.load(
+  //     'texture.jpg',
+  //     function (texture) {
+  //       const mat = new THREE.MeshBasicMaterial({
+  //         map: texture,
+  //       })
+
+  //       loadModel({ scene, mat })
+  //     },
+  //     undefined,
+
+  //     function (err) {
+  //       console.error('An error happened.')
+  //     }
+  //   )
+  // }
+
+  const loadModel = async ({ scene }) => {
     const loader = new GLTFLoader().setPath('/src/assets/gltf/')
+
     const stufs = []
+    const models = ['c_triple', 'c_triple', 'c_ovenTop', 'c_ovenTop', 'c_bottom']
+    // 'c_bottom', 'c_ovenTop', 'c_top',
+    let endOfLast = 0
 
-    loader.load(
-      'c_triple.gltf',
-      function (gltf) {
-        const model = gltf.scene
-        const boundingBox = new THREE.Box3().setFromObject(model)
+    for (let index = 0; index < models.length; index++) {
+      const m = models[index]
+      const gltf = await loader.loadAsync(`${m}.gltf`)
+      const model = gltf.scene
 
+      if (stufs.length > 0) {
+        const pre = stufs[index - 1]
+        const boundingBox = new THREE.Box3().setFromObject(pre)
         const size = new THREE.Vector3()
         boundingBox.getSize(size)
 
-        console.log('size', size)
+        endOfLast = size.x + endOfLast
 
+        model.position.set(endOfLast, 0, 0)
+      } else {
         model.position.set(0, 0, 0)
-        stufs.push(model)
-
-        const clonedModel = model.clone()
-        clonedModel.position.set(size.x, 0, 0) // Kopyanın pozisyonunu ayarla
-        scene.add(clonedModel)
-
-        scene.add(model)
-      },
-      undefined,
-      function (error) {
-        console.error(error)
       }
-    )
+
+      stufs.push(model)
+      scene.add(model)
+      console.log(stufs)
+    }
+
+    // await loader.load(
+    //   'c_triple.gltf',
+    //   function (gltf) {
+    //     const model = gltf.scene
+    //     const boundingBox = new THREE.Box3().setFromObject(model)
+
+    //     // model.traverse((o) => {
+    //     //   if (o.isMesh) o.material = mat
+    //     // })
+
+    //     const size = new THREE.Vector3()
+    //     boundingBox.getSize(size)
+
+    //     model.position.set(0, 0, 0)
+
+    //     stufs.push(model)
+
+    //     // const clonedModel = model.clone()
+    //     // clonedModel.position.set(size.x, 0, 0)
+    //     // scene.add(clonedModel)
+
+    //     scene.add(model)
+    //   },
+    //   undefined,
+    //   function (error) {
+    //     console.error(error)
+    //   }
+    // )
 
     // console.log('stufs', stufs)
 
@@ -92,9 +137,9 @@ function RoomDesigner() {
   }
 
   useEffect(() => {
-    const { controls, camera, renderer, scene } = init()
+    const { camera, renderer, scene } = init()
 
-    loadModel({ scene, camera, renderer, controls })
+    loadModel({ scene })
 
     function animate() {
       requestAnimationFrame(animate)
