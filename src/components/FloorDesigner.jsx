@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useEffect } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
@@ -8,7 +8,7 @@ import { DragControls } from 'three/addons/controls/DragControls.js'
 const initialColor = 0xf2ff56 // Set the desired initial color here
 
 function FloorDesigner() {
-  const images = [
+  const [images, setImages] = useState([
     {
       image: 'triple',
       x: 0,
@@ -19,7 +19,14 @@ function FloorDesigner() {
       x: 1,
       y: 0,
     },
-  ]
+    {
+      image: 'wardrobe',
+      x: 2,
+      y: 0,
+    },
+  ])
+
+  console.log(images)
 
   const init = () => {
     const camera = new THREE.PerspectiveCamera(75, windowWidth / windowHeight, 0.1, 1000)
@@ -64,15 +71,17 @@ function FloorDesigner() {
     return { controls, camera, renderer, scene, gridHelper }
   }
 
-  const createPlane = ({ scene, camera, renderer, image }) => {
+  const createPlane = ({ scene, camera, renderer, item }) => {
     const geometry = new THREE.PlaneGeometry(1, 1)
     // create random color
-    const color = Math.random() * 0xffffff
 
-    const material = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide })
+    const texture = new THREE.TextureLoader().load(`src/assets/textures/${item.image}.jpg`)
+    texture.colorSpace = THREE.SRGBColorSpace
+
+    const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
     const plane = new THREE.Mesh(geometry, material)
 
-    plane.position.x = 0.5 + image.x
+    plane.position.x = 0.5 + item.x
     plane.position.z = 0.5
 
     const dragControls = new DragControls([plane], camera, renderer.domElement)
@@ -88,8 +97,6 @@ function FloorDesigner() {
       const ePosX = event.object.position.x
       const ePosZ = event.object.position.z
 
-      console.log('ePosX: ', ePosX)
-
       let xMultiplier = 1
       let zMultiplier = 1
 
@@ -101,9 +108,19 @@ function FloorDesigner() {
         zMultiplier = -1
       }
 
-      plane.position.x = Math.round(event.object.position.x / (canvasSize / canvasDivisions)) * (canvasSize / canvasDivisions) + xMultiplier * (objectWidth / 2)
+      const x = Math.round(event.object.position.x / (canvasSize / canvasDivisions)) * (canvasSize / canvasDivisions)
+      const z = Math.round(event.object.position.z / (canvasSize / canvasDivisions)) * (canvasSize / canvasDivisions)
 
-      plane.position.z = Math.round(event.object.position.z / (canvasSize / canvasDivisions)) * (canvasSize / canvasDivisions) + zMultiplier * (objectHeight / 2)
+      plane.position.x = x + xMultiplier * (objectWidth / 2)
+      plane.position.z = z + zMultiplier * (objectHeight / 2)
+
+      setImages((prev) => {
+        const index = prev.findIndex((i) => i.image === item.image)
+        const newImages = [...prev]
+        newImages[index].x = x
+        newImages[index].y = z
+        return newImages
+      })
     })
 
     plane.rotation.x = Math.PI / 2
@@ -114,8 +131,8 @@ function FloorDesigner() {
     const { camera, renderer, scene, gridHelper } = init()
 
     for (let index = 0; index < images.length; index++) {
-      const image = images[index]
-      createPlane({ scene, camera, renderer, image })
+      const item = images[index]
+      createPlane({ scene, camera, renderer, item })
     }
 
     function animate() {
