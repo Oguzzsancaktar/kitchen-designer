@@ -1,5 +1,5 @@
-const canvasSize = 10
-const canvasDivisions = 10
+const canvasSize = 20
+const canvasDivisions = 20
 const windowWidth = window.innerWidth
 const windowHeight = window.innerHeight
 

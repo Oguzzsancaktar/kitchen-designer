@@ -8,6 +8,19 @@ import { DragControls } from 'three/addons/controls/DragControls.js'
 const initialColor = 0xf2ff56 // Set the desired initial color here
 
 function FloorDesigner() {
+  const images = [
+    {
+      image: 'triple',
+      x: 0,
+      y: 0,
+    },
+    {
+      image: 'oven',
+      x: 1,
+      y: 0,
+    },
+  ]
+
   const init = () => {
     const camera = new THREE.PerspectiveCamera(75, windowWidth / windowHeight, 0.1, 1000)
     const renderer = new THREE.WebGLRenderer()
@@ -38,6 +51,11 @@ function FloorDesigner() {
 
     gridHelper.material.color.set(initialColor)
 
+    gridHelper.addEventListener('click', function (event) {
+      console.log(event)
+      gridHelper.material.color.set(0xff0000)
+    })
+
     scene.add(gridHelper)
 
     camera.position.set(0, 10, 0)
@@ -46,47 +64,46 @@ function FloorDesigner() {
     return { controls, camera, renderer, scene, gridHelper }
   }
 
-  const raycaster = new THREE.Raycaster()
-  const mouse = new THREE.Vector2()
-
-  function onMouseMove(event, { camera, gridHelper }) {
-    // Calculate the mouse coordinates
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-
-    // Update the raycaster
-    raycaster.setFromCamera(mouse, camera)
-
-    // Perform raycasting
-    const intersects = raycaster.intersectObject(gridHelper)
-
-    console.log(intersects)
-    // Check if the grid is being hovered over
-    if (intersects.length > 0) {
-      // Change the color of the grid when hovered
-      const hoverColor = 0xff0000 // Set the desired hover color here
-      gridHelper.material.color.set(hoverColor)
-    } else {
-      // Reset the color when not hovered
-      gridHelper.material.color.set(initialColor)
-    }
-  }
-
-  const createPlane = ({ scene, camera, renderer }) => {
+  const createPlane = ({ scene, camera, renderer, image }) => {
     const geometry = new THREE.PlaneGeometry(1, 1)
-    const material = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })
+    // create random color
+    const color = Math.random() * 0xffffff
+
+    const material = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide })
     const plane = new THREE.Mesh(geometry, material)
+
+    plane.position.x = 0.5 + image.x
+    plane.position.z = 0.5
 
     const dragControls = new DragControls([plane], camera, renderer.domElement)
 
     dragControls.addEventListener('dragstart', function (event) {
-      // event.object.material.emissive.set(0xdd0000)
+      plane.position.y = 20
     })
 
     dragControls.addEventListener('dragend', function (event) {
-      // event.object.material.emissive.set(0x000000)
-      plane.position.y = 0.001
-      plane.position.x = event.object.position.x
+      const objectWidth = event.object.geometry.parameters.width
+      const objectHeight = event.object.geometry.parameters.height
+
+      const ePosX = event.object.position.x
+      const ePosZ = event.object.position.z
+
+      console.log('ePosX: ', ePosX)
+
+      let xMultiplier = 1
+      let zMultiplier = 1
+
+      if (ePosX < Math.round(ePosX)) {
+        xMultiplier = -1
+      }
+
+      if (ePosZ < Math.round(ePosZ)) {
+        zMultiplier = -1
+      }
+
+      plane.position.x = Math.round(event.object.position.x / (canvasSize / canvasDivisions)) * (canvasSize / canvasDivisions) + xMultiplier * (objectWidth / 2)
+
+      plane.position.z = Math.round(event.object.position.z / (canvasSize / canvasDivisions)) * (canvasSize / canvasDivisions) + zMultiplier * (objectHeight / 2)
     })
 
     plane.rotation.x = Math.PI / 2
@@ -96,9 +113,10 @@ function FloorDesigner() {
   useEffect(() => {
     const { camera, renderer, scene, gridHelper } = init()
 
-    createPlane({ scene, camera, renderer })
-
-    window.addEventListener('mousemove', (event) => onMouseMove(event, { camera, gridHelper }))
+    for (let index = 0; index < images.length; index++) {
+      const image = images[index]
+      createPlane({ scene, camera, renderer, image })
+    }
 
     function animate() {
       requestAnimationFrame(animate)
