@@ -72,7 +72,9 @@ function RoomDesigner() {
     // 'c_bottom', 'c_ovenTop', 'c_top',
     let endOfLast = 0
 
-    for (let index = 0; index < images.length; index++) {
+    const sortedArr = images.sort((a, b) => a.x - b.x)
+
+    for (let index = 0; index < sortedArr.length; index++) {
       const m = images[index]
 
       if (m.image === 'oven' || m.image === 'default') {
@@ -88,7 +90,7 @@ function RoomDesigner() {
           const size = new THREE.Vector3()
           boundingBox.getSize(size)
 
-          endOfLast = size.x + endOfLast
+          endOfLast += size.x
 
           modelTop.position.setX(endOfLast)
           modelBottom.position.setX(endOfLast)
@@ -112,7 +114,7 @@ function RoomDesigner() {
           const size = new THREE.Vector3()
           boundingBox.getSize(size)
 
-          endOfLast = size.x + endOfLast
+          endOfLast += size.x
 
           model.position.set(endOfLast, 0, 0)
         } else {
@@ -122,8 +124,6 @@ function RoomDesigner() {
         stufs.push(model)
         scene.add(model)
       }
-
-      console.log(stufs)
     }
 
     // await loader.load(
