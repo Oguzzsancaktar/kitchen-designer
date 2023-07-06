@@ -5,8 +5,13 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { canvasDivisions, canvasSize, windowHeight, windowWidth } from '../constants/sizes'
+import { useEditorContext } from '../context/editorContext'
 
 function RoomDesigner() {
+  const { images, setImages } = useEditorContext()
+
+  console.log('images', images)
+
   const init = () => {
     const camera = new THREE.PerspectiveCamera(75, windowWidth / windowHeight, 0.1, 1000)
     const renderer = new THREE.WebGLRenderer()
@@ -34,7 +39,7 @@ function RoomDesigner() {
     const gridHelper = new THREE.GridHelper(canvasSize, canvasDivisions)
     scene.add(gridHelper)
 
-    camera.position.set(0, 0, 10)
+    camera.position.set(0, 2, 10)
     camera.lookAt(0, 0, 0)
 
     return { controls, camera, renderer, scene }
@@ -64,30 +69,60 @@ function RoomDesigner() {
     const loader = new GLTFLoader().setPath('/src/assets/gltf/')
 
     const stufs = []
-    const models = ['c_triple', 'c_triple', 'c_ovenTop', 'c_ovenTop', 'c_bottom']
     // 'c_bottom', 'c_ovenTop', 'c_top',
     let endOfLast = 0
 
-    for (let index = 0; index < models.length; index++) {
-      const m = models[index]
-      const gltf = await loader.loadAsync(`${m}.gltf`)
-      const model = gltf.scene
+    for (let index = 0; index < images.length; index++) {
+      const m = images[index]
 
-      if (stufs.length > 0) {
-        const pre = stufs[index - 1]
-        const boundingBox = new THREE.Box3().setFromObject(pre)
-        const size = new THREE.Vector3()
-        boundingBox.getSize(size)
+      if (m.image === 'oven' || m.image === 'default') {
+        const gltfTop = await loader.loadAsync(`${m.image}_top.gltf`)
+        const gltfBottom = await loader.loadAsync(`${m.image}_bottom.gltf`)
 
-        endOfLast = size.x + endOfLast
+        const modelTop = gltfTop.scene
+        const modelBottom = gltfBottom.scene
 
-        model.position.set(endOfLast, 0, 0)
+        if (stufs.length > 0) {
+          const pre = stufs[index - 1]
+          const boundingBox = new THREE.Box3().setFromObject(pre)
+          const size = new THREE.Vector3()
+          boundingBox.getSize(size)
+
+          endOfLast = size.x + endOfLast
+
+          modelTop.position.setX(endOfLast)
+          modelBottom.position.setX(endOfLast)
+        } else {
+          modelTop.position.x.set(0)
+          modelBottom.position.x.set(0)
+        }
+
+        stufs.push(modelBottom)
+        stufs.push(modelTop)
+
+        scene.add(modelTop)
+        scene.add(modelBottom)
       } else {
-        model.position.set(0, 0, 0)
+        const gltf = await loader.loadAsync(`${m.image}.gltf`)
+        const model = gltf.scene
+
+        if (stufs.length > 0) {
+          const pre = stufs[index - 1]
+          const boundingBox = new THREE.Box3().setFromObject(pre)
+          const size = new THREE.Vector3()
+          boundingBox.getSize(size)
+
+          endOfLast = size.x + endOfLast
+
+          model.position.set(endOfLast, 0, 0)
+        } else {
+          model.position.set(0, 0, 0)
+        }
+
+        stufs.push(model)
+        scene.add(model)
       }
 
-      stufs.push(model)
-      scene.add(model)
       console.log(stufs)
     }
 

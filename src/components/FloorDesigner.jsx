@@ -5,28 +5,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { canvasDivisions, canvasSize, windowHeight, windowWidth } from '../constants/sizes'
 import { DragControls } from 'three/addons/controls/DragControls.js'
+import { useEditorContext } from '../context/editorContext'
 const initialColor = 0xf2ff56 // Set the desired initial color here
 
 function FloorDesigner() {
-  const [images, setImages] = useState([
-    {
-      image: 'triple',
-      x: 0,
-      y: 0,
-    },
-    {
-      image: 'oven',
-      x: 1,
-      y: 0,
-    },
-    {
-      image: 'wardrobe',
-      x: 2,
-      y: 0,
-    },
-  ])
-
-  console.log(images)
+  const { images, setImages } = useEditorContext()
 
   const init = () => {
     const camera = new THREE.PerspectiveCamera(75, windowWidth / windowHeight, 0.1, 1000)
@@ -141,14 +124,15 @@ function FloorDesigner() {
     }
 
     animate()
-    document.querySelector('#room-designer-container').appendChild(renderer.domElement)
+    document.querySelector('#floor-designer-container').appendChild(renderer.domElement)
 
     return () => {
-      document.querySelector('#room-designer-container')?.removeChild(renderer.domElement)
+      console.log("document.querySelector('#floor-designer-container')", document.querySelector('#floor-designer-container'))
+      document.querySelector('#floor-designer-container')?.removeChild(renderer.domElement)
     }
   }, [])
 
-  return <div id="room-designer-container" />
+  return <div id="floor-designer-container" />
 }
 
 export default FloorDesigner
