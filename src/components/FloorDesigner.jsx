@@ -9,7 +9,11 @@ import { useEditorContext } from '../context/editorContext'
 const initialColor = 0xf2ff56 // Set the desired initial color here
 
 function FloorDesigner() {
-  const { items, setItems, roomArea } = useEditorContext()
+  const { items, setItems, roomArea, setRoomArea } = useEditorContext()
+
+  const cameraRef = React.useRef()
+  const rendererRef = React.useRef()
+  const sceneRef = React.useRef()
 
   const init = () => {
     const camera = new THREE.PerspectiveCamera(75, windowWidth / windowHeight, 0.1, 1000)
@@ -54,45 +58,60 @@ function FloorDesigner() {
     return { controls, camera, renderer, scene, gridHelper }
   }
 
-  const drawDots = ({ scene }) => {
+  const drawDots = () => {
     roomArea.forEach((item) => {
-      const circleShape = new THREE.Shape()
-      circleShape.moveTo(-10, 0)
-      circleShape.absarc(item.x, item.y, 0.1, 0, Math.PI * 2, false)
+      const geometry = new THREE.SphereGeometry(0.05, 32, 32)
+      const material = new THREE.MeshBasicMaterial({ color: 0xff0000 })
+      const sphere = new THREE.Mesh(geometry, material)
 
-      const geometry = new THREE.ShapeGeometry(circleShape)
-      const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-      const circle = new THREE.Mesh(geometry, material)
+      sphere.position.x = item.x
+      sphere.position.z = item.y
+      sphere.position.y = 0.05
 
-      scene.add(circle)
+      const dragControls = new DragControls([sphere], cameraRef.current, rendererRef.current.domElement)
 
-      const geometry2 = new THREE.CircleGeometry(0.1, 32)
-      const material2 = new THREE.MeshBasicMaterial({ color: 0xffff00 })
-      const circle2 = new THREE.Mesh(geometry2, material2)
+      dragControls.addEventListener('dragend', function (event) {
+        const x = Math.round(event.object.position.x / (canvasSize / canvasDivisions)) * (canvasSize / canvasDivisions)
+        const z = Math.round(event.object.position.z / (canvasSize / canvasDivisions)) * (canvasSize / canvasDivisions)
 
-      circle2.position.x = item.x
-      circle2.position.z = item.y
+        sphere.position.x = x
+        sphere.position.z = z
 
-      scene.add(circle2)
+        setRoomArea((prev) => {
+          const index = prev.findIndex((i) => i.x === item.x && i.y === item.y)
+          const newItems = [...prev]
+          newItems[index].x = x
+          newItems[index].y = z
+          return newItems
+        })
+
+        sphere.position.y = 0.05
+      })
+
+      sceneRef.current.add(sphere)
     })
   }
 
-  const drawAreaRect = ({ scene }) => {
-    const geometry = new THREE.PlaneGeometry(1, 1)
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide })
-    const plane = new THREE.Mesh(geometry, material)
+  const drawRoomArea = () => {
+    sceneRef.current.children.forEach((item) => {
+      if (item.type === 'Line') {
+        sceneRef.current.remove(item)
+      }
+    })
 
-    plane.position.x = 0.5
-    plane.position.z = 0.5
-    plane.position.y = 0.01
-
-    scene.add(plane)
+    const material = new THREE.LineBasicMaterial({ color: 0x0000ff })
+    const points = []
+    const roomAreaForLines = [...roomArea, roomArea[0]]
+    roomAreaForLines.forEach((item) => {
+      points.push(new THREE.Vector3(item.x, 0.05, item.y))
+    })
+    const geometry = new THREE.BufferGeometry().setFromPoints(points)
+    const line = new THREE.Line(geometry, material)
+    sceneRef.current.add(line)
   }
 
-  const createPlane = ({ scene, camera, renderer, item }) => {
+  const createPlane = (item) => {
     const geometry = new THREE.PlaneGeometry(1, 1)
-    // create random color
-
     const texture = new THREE.TextureLoader().load(`src/assets/textures/${item.image}.jpg`)
     texture.colorSpace = THREE.SRGBColorSpace
 
@@ -102,7 +121,7 @@ function FloorDesigner() {
     plane.position.x = 0.5 + item.x
     plane.position.z = 0.5
 
-    const dragControls = new DragControls([plane], camera, renderer.domElement)
+    const dragControls = new DragControls([plane], cameraRef.current, rendererRef.current.domElement)
 
     dragControls.addEventListener('dragstart', function () {
       plane.position.y = 0.1
@@ -147,17 +166,28 @@ function FloorDesigner() {
     })
 
     plane.rotation.x = Math.PI / 2
-    scene.add(plane)
+    sceneRef.current.add(plane)
   }
+
+  useEffect(() => {
+    if (roomArea.length > 0 && rendererRef.current && sceneRef.current && cameraRef.current) {
+      drawDots()
+      drawRoomArea()
+    }
+  }, [roomArea])
 
   useEffect(() => {
     const { camera, renderer, scene } = init()
 
-    drawAreaRect({ scene })
-    drawDots({ scene })
+    cameraRef.current = camera
+    rendererRef.current = renderer
+    sceneRef.current = scene
+
+    drawDots()
+    drawRoomArea()
     for (let index = 0; index < items.length; index++) {
       const item = items[index]
-      createPlane({ scene, camera, renderer, item })
+      createPlane(item)
     }
 
     function animate() {
