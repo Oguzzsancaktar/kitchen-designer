@@ -2,7 +2,25 @@
 
 import { createContext, useContext, useState } from 'react'
 
-const initialImages = [
+const initialRoomArea = [
+  {
+    x: 0,
+    y: 0,
+  },
+  {
+    x: 6,
+    y: 0,
+  },
+  {
+    x: 6,
+    y: 6,
+  },
+  {
+    x: 0,
+    y: 6,
+  },
+]
+const initialItems = [
   {
     image: 'triple',
     x: 0,
@@ -30,7 +48,7 @@ const initialImages = [
   },
 ]
 
-const EditorContext = createContext(initialImages)
+const EditorContext = createContext({ items: initialItems, roomArea: initialRoomArea })
 
 const useEditorContext = () => {
   const ctx = useContext(EditorContext)
@@ -43,9 +61,10 @@ const useEditorContext = () => {
 }
 
 const EditorContextProvider = ({ children }) => {
-  const [images, setImages] = useState(initialImages)
+  const [items, setItems] = useState(initialItems)
+  const [roomArea, setRoomArea] = useState(initialRoomArea)
 
-  return <EditorContext.Provider value={{ images, setImages }}>{children}</EditorContext.Provider>
+  return <EditorContext.Provider value={{ items, setItems, roomArea, setRoomArea }}>{children}</EditorContext.Provider>
 }
 
 export { useEditorContext, EditorContextProvider }

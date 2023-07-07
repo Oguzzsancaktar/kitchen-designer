@@ -8,9 +8,7 @@ import { canvasDivisions, canvasSize, windowHeight, windowWidth } from '../const
 import { useEditorContext } from '../context/editorContext'
 
 function RoomDesigner() {
-  const { images, setImages } = useEditorContext()
-
-  console.log('images', images)
+  const { items } = useEditorContext()
 
   const init = () => {
     const camera = new THREE.PerspectiveCamera(75, windowWidth / windowHeight, 0.1, 1000)
@@ -72,10 +70,10 @@ function RoomDesigner() {
     // 'c_bottom', 'c_ovenTop', 'c_top',
     let endOfLast = 0
 
-    const sortedArr = images.sort((a, b) => a.x - b.x)
+    const sortedArr = items.sort((a, b) => a.x - b.x)
 
     for (let index = 0; index < sortedArr.length; index++) {
-      const m = images[index]
+      const m = items[index]
 
       if (m.image === 'oven' || m.image === 'default') {
         const gltfTop = await loader.loadAsync(`${m.image}_top.gltf`)
@@ -89,14 +87,13 @@ function RoomDesigner() {
           const boundingBox = new THREE.Box3().setFromObject(pre)
           const size = new THREE.Vector3()
           boundingBox.getSize(size)
-
           endOfLast += size.x
 
           modelTop.position.setX(endOfLast)
           modelBottom.position.setX(endOfLast)
         } else {
-          modelTop.position.x.set(0)
-          modelBottom.position.x.set(0)
+          modelTop.position.setX(0)
+          modelBottom.position.setX(0)
         }
 
         stufs.push(modelBottom)
