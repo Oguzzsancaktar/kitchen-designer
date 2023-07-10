@@ -8,7 +8,11 @@ import { canvasDivisions, canvasSize, windowHeight, windowWidth } from '../const
 import { useEditorContext } from '../context/editorContext'
 
 function RoomDesigner() {
-  const { items } = useEditorContext()
+  const { items, roomArea } = useEditorContext()
+
+  const cameraRef = React.useRef()
+  const rendererRef = React.useRef()
+  const sceneRef = React.useRef()
 
   const init = () => {
     const camera = new THREE.PerspectiveCamera(75, windowWidth / windowHeight, 0.1, 1000)
@@ -43,6 +47,33 @@ function RoomDesigner() {
     return { controls, camera, renderer, scene }
   }
 
+  const createRoom = () => {
+    const scene = sceneRef.current
+
+    // Create room wall and floor with points from roomArea
+    const roomPoints = []
+    roomArea.forEach((point) => {
+      roomPoints.push(new THREE.Vector2(point.x, point.y))
+    })
+    const shape = new THREE.Shape(roomPoints)
+    const extrudeSettings = {
+      steps: 0,
+      depth: -3,
+      bevelEnabled: true,
+      bevelThickness: 0.1,
+      bevelSize: 0.1,
+      bevelOffset: 0,
+      bevelSegments: 1,
+    }
+    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
+    const material = new THREE.MeshPhongMaterial({ color: 0x755c00 })
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.position.set(0, 0, 0)
+    mesh.rotation.set(Math.PI / 2, 0, 0)
+    mesh.scale.set(1, 1, 1)
+    scene.add(mesh)
+  }
+
   // const loadTexture = ({ scene }) => {
   //   console.log('scene', scene)
   //   const loader = new THREE.TextureLoader().setPath('/src/assets/')
@@ -63,7 +94,7 @@ function RoomDesigner() {
   //   )
   // }
 
-  const loadModel = async ({ scene }) => {
+  const loadModel = async () => {
     const loader = new GLTFLoader().setPath('/src/assets/gltf/')
 
     const stufs = []
@@ -87,6 +118,7 @@ function RoomDesigner() {
           const boundingBox = new THREE.Box3().setFromObject(pre)
           const size = new THREE.Vector3()
           boundingBox.getSize(size)
+
           endOfLast += size.x
 
           modelTop.position.setX(endOfLast)
@@ -99,8 +131,8 @@ function RoomDesigner() {
         stufs.push(modelBottom)
         stufs.push(modelTop)
 
-        scene.add(modelTop)
-        scene.add(modelBottom)
+        sceneRef.current.add(modelTop)
+        sceneRef.current.add(modelBottom)
       } else {
         const gltf = await loader.loadAsync(`${m.image}.gltf`)
         const model = gltf.scene
@@ -119,7 +151,7 @@ function RoomDesigner() {
         }
 
         stufs.push(model)
-        scene.add(model)
+        sceneRef.current.add(model)
       }
     }
 
@@ -171,7 +203,12 @@ function RoomDesigner() {
   useEffect(() => {
     const { camera, renderer, scene } = init()
 
-    loadModel({ scene })
+    cameraRef.current = camera
+    rendererRef.current = renderer
+    sceneRef.current = scene
+
+    loadModel()
+    createRoom()
 
     function animate() {
       requestAnimationFrame(animate)

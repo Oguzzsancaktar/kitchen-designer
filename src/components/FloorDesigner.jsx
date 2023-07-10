@@ -15,6 +15,7 @@ function FloorDesigner() {
   const rendererRef = React.useRef()
   const sceneRef = React.useRef()
 
+  console.log('items', items)
   const init = () => {
     const camera = new THREE.PerspectiveCamera(75, windowWidth / windowHeight, 0.1, 1000)
     const renderer = new THREE.WebGLRenderer()
@@ -56,6 +57,23 @@ function FloorDesigner() {
     camera.lookAt(0, 0, 0)
 
     return { controls, camera, renderer, scene, gridHelper }
+  }
+
+  const addDefaultItems = () => {
+    const smallestX = Math.min(...roomArea.map((item) => item.x))
+    const higherX = Math.max(...roomArea.map((item) => item.x))
+
+    const tempItems = []
+
+    for (let i = 0; i < higherX - smallestX; i++) {
+      tempItems.push({
+        image: 'default',
+        x: smallestX + i,
+        y: 0,
+      })
+    }
+
+    setItems(tempItems)
   }
 
   const drawDots = () => {
@@ -132,6 +150,7 @@ function FloorDesigner() {
     })
 
     dragControls.addEventListener('dragend', function (event) {
+      console.log('event.object.userData', item)
       const objectWidth = event.object.geometry.parameters.width
       const objectHeight = event.object.geometry.parameters.height
 
@@ -152,6 +171,8 @@ function FloorDesigner() {
       const x = Math.round(event.object.position.x / (canvasSize / canvasDivisions)) * (canvasSize / canvasDivisions)
       const z = Math.round(event.object.position.z / (canvasSize / canvasDivisions)) * (canvasSize / canvasDivisions)
 
+      const dragEndItem = items.find((i) => x === i.x && z === i.y)
+
       plane.position.x = x + xMultiplier * (objectWidth / 2)
       plane.position.z = z + zMultiplier * (objectHeight / 2)
 
@@ -162,6 +183,21 @@ function FloorDesigner() {
         newItems[index].y = z
         return newItems
       })
+
+      // if (!dragEndItem) {
+      //   // setItems((prev) => {
+      //   //   const index = prev.findIndex((i) => i.image === item.image)
+      //   //   const newItems = [...prev]
+      //   //   newItems[index].x = x
+      //   //   newItems[index].y = z
+      //   //   return newItems
+      //   // })
+      // } else {
+      //   // change items
+      //   const changedItem = { ...dragEndItem, x: item.x, y: item.y }
+      //   console.log('changedItem', changedItem)
+      // }
+
       plane.position.y = 0.05
     })
 
@@ -173,6 +209,8 @@ function FloorDesigner() {
     if (roomArea.length > 0 && rendererRef.current && sceneRef.current && cameraRef.current) {
       drawDots()
       drawRoomArea()
+
+      addDefaultItems()
     }
   }, [roomArea])
 

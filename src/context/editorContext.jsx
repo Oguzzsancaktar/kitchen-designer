@@ -46,6 +46,11 @@ const initialItems = [
     x: 4,
     y: 0,
   },
+  {
+    image: 'default',
+    x: 5,
+    y: 0,
+  },
 ]
 
 const EditorContext = createContext({ items: initialItems, roomArea: initialRoomArea })
