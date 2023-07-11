@@ -52,9 +52,24 @@ function RoomDesigner() {
 
     // Create room wall and floor with points from roomArea
     const roomPoints = []
+    const smallestX = Math.min(...roomArea.map((point) => point.x))
+    const smallestY = Math.min(...roomArea.map((point) => point.y))
+
     roomArea.forEach((point) => {
+      if (smallestX < 0 && smallestY < 0) {
+        return roomPoints.push(new THREE.Vector2(point.x + Math.abs(smallestX), point.y + Math.abs(smallestY)))
+      }
+
+      if (smallestX < 0) {
+        return roomPoints.push(new THREE.Vector2(point.x + Math.abs(smallestX), point.y))
+      }
+
+      if (smallestY < 0) {
+        return roomPoints.push(new THREE.Vector2(point.x, point.y + Math.abs(smallestY)))
+      }
       roomPoints.push(new THREE.Vector2(point.x, point.y))
     })
+
     const shape = new THREE.Shape(roomPoints)
     const extrudeSettings = {
       steps: 0,
@@ -66,11 +81,42 @@ function RoomDesigner() {
       bevelSegments: 1,
     }
     const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
-    const material = new THREE.MeshPhongMaterial({ color: 0x755c00 })
+    // make every faces different color
+
+    // geometry.faces.forEach((face) => {
+    //   face.color.setHex(Math.random() * 0xffffff)
+    // })
+
+    const texture = new THREE.TextureLoader().load('/src/assets/textures/wood.jpeg')
+
+    const material = new THREE.MeshLambertMaterial({
+      map: texture,
+    })
     const mesh = new THREE.Mesh(geometry, material)
     mesh.position.set(0, 0, 0)
     mesh.rotation.set(Math.PI / 2, 0, 0)
-    mesh.scale.set(1, 1, 1)
+
+    let loadedGroupModelsTotalWidth = 0
+
+    console.log('sceneRef.current.children', sceneRef.current.children)
+    sceneRef.current.children.forEach((item) => {
+      if (item.type === 'Group') {
+        const boundingBox = new THREE.Box3().setFromObject(item)
+        const size = new THREE.Vector3()
+        boundingBox.getSize(size)
+
+        loadedGroupModelsTotalWidth += size.x
+      }
+    })
+
+    console.log('loadedGroupModelsTotalWidth', loadedGroupModelsTotalWidth)
+
+    const boundingBox = new THREE.Box3().setFromObject(mesh)
+    const size = new THREE.Vector3()
+    boundingBox.getSize(size)
+
+    // const scale = 2.779778961742946 / size.x
+    mesh.scale.set(0.55, 0.55, 1)
     scene.add(mesh)
   }
 
@@ -98,7 +144,6 @@ function RoomDesigner() {
     const loader = new GLTFLoader().setPath('/src/assets/gltf/')
 
     const stufs = []
-    // 'c_bottom', 'c_ovenTop', 'c_top',
     let endOfLast = 0
 
     const sortedArr = items.sort((a, b) => a.x - b.x)
@@ -128,7 +173,7 @@ function RoomDesigner() {
           modelBottom.position.setX(0)
         }
 
-        stufs.push(modelBottom)
+        // stufs.push(modelBottom)
         stufs.push(modelTop)
 
         sceneRef.current.add(modelTop)

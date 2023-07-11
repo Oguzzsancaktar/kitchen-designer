@@ -15,7 +15,6 @@ function FloorDesigner() {
   const rendererRef = React.useRef()
   const sceneRef = React.useRef()
 
-  console.log('items', items)
   const init = () => {
     const camera = new THREE.PerspectiveCamera(75, windowWidth / windowHeight, 0.1, 1000)
     const renderer = new THREE.WebGLRenderer()
@@ -72,6 +71,13 @@ function FloorDesigner() {
         y: 0,
       })
     }
+
+    items.forEach((item) => {
+      const index = tempItems.findIndex((i) => i.x === item.x && i.y === item.y)
+      if (index !== -1) {
+        tempItems[index] = item
+      }
+    })
 
     setItems(tempItems)
   }
@@ -209,10 +215,18 @@ function FloorDesigner() {
     if (roomArea.length > 0 && rendererRef.current && sceneRef.current && cameraRef.current) {
       drawDots()
       drawRoomArea()
-
       addDefaultItems()
     }
   }, [roomArea])
+
+  useEffect(() => {
+    if (items.length > 0 && rendererRef.current && sceneRef.current && cameraRef.current) {
+      for (let index = 0; index < items.length; index++) {
+        const item = items[index]
+        createPlane(item)
+      }
+    }
+  }, [items])
 
   useEffect(() => {
     const { camera, renderer, scene } = init()
@@ -223,10 +237,6 @@ function FloorDesigner() {
 
     drawDots()
     drawRoomArea()
-    for (let index = 0; index < items.length; index++) {
-      const item = items[index]
-      createPlane(item)
-    }
 
     function animate() {
       requestAnimationFrame(animate)
