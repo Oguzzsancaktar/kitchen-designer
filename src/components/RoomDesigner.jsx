@@ -7,6 +7,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { canvasDivisions, canvasSize, windowHeight, windowWidth } from '../constants/sizes'
 import { useEditorContext } from '../context/editorContext'
 
+const modelIncreaseScaleRatio = 100 / 55
 function RoomDesigner() {
   const { items, roomArea } = useEditorContext()
 
@@ -31,17 +32,21 @@ function RoomDesigner() {
     const pmremGenerator = new THREE.PMREMGenerator(renderer)
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture
 
-    const ambientLight = new THREE.AmbientLight(0x404040, 3)
+    const ambientLight = new THREE.AmbientLight(0x000000, 1)
     scene.add(ambientLight)
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
+    var light = new THREE.PointLight(0x000000, 1)
+    light.position.set(0, 1, 0) // Işık pozisyonunu ayarlayın
+    scene.add(light) // Işığı sahneye ekleyin
+
+    const directionalLight = new THREE.DirectionalLight(0x000000, 1)
     directionalLight.position.set(1, 1, 1).normalize()
     scene.add(directionalLight)
 
     const gridHelper = new THREE.GridHelper(canvasSize, canvasDivisions)
-    scene.add(gridHelper)
+    // scene.add(gridHelper)
 
-    camera.position.set(0, 2, 10)
+    camera.position.set(10, 15, 15)
     camera.lookAt(0, 0, 0)
 
     return { controls, camera, renderer, scene }
@@ -50,101 +55,76 @@ function RoomDesigner() {
   const createRoom = () => {
     const scene = sceneRef.current
 
-    // Create room wall and floor with points from roomArea
     const roomPoints = []
-    const smallestX = Math.min(...roomArea.map((point) => point.x))
-    const smallestY = Math.min(...roomArea.map((point) => point.y))
 
     roomArea.forEach((point) => {
-      if (smallestX < 0 && smallestY < 0) {
-        return roomPoints.push(new THREE.Vector2(point.x + Math.abs(smallestX), point.y + Math.abs(smallestY)))
-      }
+      return roomPoints.push(new THREE.Vector2(point.x, point.y))
+    })
 
-      if (smallestX < 0) {
-        return roomPoints.push(new THREE.Vector2(point.x + Math.abs(smallestX), point.y))
-      }
+    const texture = new THREE.TextureLoader().load('/src/assets/textures/wood.jpeg', function (texture) {
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+      texture.offset.set(0, 0)
+      texture.repeat.set(2, 2)
+    })
 
-      if (smallestY < 0) {
-        return roomPoints.push(new THREE.Vector2(point.x, point.y + Math.abs(smallestY)))
-      }
-      roomPoints.push(new THREE.Vector2(point.x, point.y))
+    const texture2 = new THREE.TextureLoader().load('/src/assets/textures/old-cement-wall-texture.jpg', function (texture) {
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+      texture.offset.set(0, 0)
+      texture.repeat.set(2, 2)
+    })
+
+    const texture3 = new THREE.TextureLoader().load('/src/assets/textures/wall-marble-texture.jpg', function (texture) {
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+      texture.offset.set(0, 0)
+      texture.repeat.set(2, 2)
     })
 
     const shape = new THREE.Shape(roomPoints)
     const extrudeSettings = {
       steps: 0,
-      depth: -3,
+      depth: -6,
       bevelEnabled: true,
       bevelThickness: 0.1,
       bevelSize: 0.1,
       bevelOffset: 0,
       bevelSegments: 1,
     }
-    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
-    // make every faces different color
 
-    // geometry.faces.forEach((face) => {
-    //   face.color.setHex(Math.random() * 0xffffff)
-    // })
+    var material1 = new THREE.MeshBasicMaterial({ color: '0xf2f200', map: texture }) // Kırmızı
+    var material2 = new THREE.MeshBasicMaterial({ color: '0xff2200', map: texture2 }) // Yeşil
+    var material3 = new THREE.MeshBasicMaterial({ color: '0xdddddd', map: texture3 }) // Mavi
 
-    const texture = new THREE.TextureLoader().load('/src/assets/textures/wood.jpeg')
+    var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
 
-    const material = new THREE.MeshLambertMaterial({
-      map: texture,
-    })
-    const mesh = new THREE.Mesh(geometry, material)
+    // Yüzleri farklı malzemelerle oluşturun
+    var mesh = new THREE.Mesh(geometry, [material2, material3])
+
+    // const mesh = new THREE.Mesh(geometry, material)
     mesh.position.set(0, 0, 0)
     mesh.rotation.set(Math.PI / 2, 0, 0)
-
-    let loadedGroupModelsTotalWidth = 0
-
-    console.log('sceneRef.current.children', sceneRef.current.children)
-    sceneRef.current.children.forEach((item) => {
-      if (item.type === 'Group') {
-        const boundingBox = new THREE.Box3().setFromObject(item)
-        const size = new THREE.Vector3()
-        boundingBox.getSize(size)
-
-        loadedGroupModelsTotalWidth += size.x
-      }
-    })
-
-    console.log('loadedGroupModelsTotalWidth', loadedGroupModelsTotalWidth)
 
     const boundingBox = new THREE.Box3().setFromObject(mesh)
     const size = new THREE.Vector3()
     boundingBox.getSize(size)
 
     // const scale = 2.779778961742946 / size.x
-    mesh.scale.set(0.55, 0.55, 1)
+    mesh.scale.set(1, 1, 1)
     scene.add(mesh)
   }
-
-  // const loadTexture = ({ scene }) => {
-  //   console.log('scene', scene)
-  //   const loader = new THREE.TextureLoader().setPath('/src/assets/')
-  //   loader.load(
-  //     'texture.jpg',
-  //     function (texture) {
-  //       const mat = new THREE.MeshBasicMaterial({
-  //         map: texture,
-  //       })
-
-  //       loadModel({ scene, mat })
-  //     },
-  //     undefined,
-
-  //     function (err) {
-  //       console.error('An error happened.')
-  //     }
-  //   )
-  // }
 
   const loadModel = async () => {
     const loader = new GLTFLoader().setPath('/src/assets/gltf/')
 
     const stufs = []
-    let endOfLast = 0
+
+    const smallestPoint = roomArea.reduce((acc, point) => {
+      if (point.x <= acc.x && point.y <= acc.y) {
+        return point
+      }
+      return acc
+    }, roomArea[0])
+
+    let endOfLast = smallestPoint.x
 
     const sortedArr = items.sort((a, b) => a.x - b.x)
 
@@ -176,6 +156,8 @@ function RoomDesigner() {
         // stufs.push(modelBottom)
         stufs.push(modelTop)
 
+        modelTop.scale.set(modelIncreaseScaleRatio, modelIncreaseScaleRatio, modelIncreaseScaleRatio)
+        modelBottom.scale.set(modelIncreaseScaleRatio, modelIncreaseScaleRatio, modelIncreaseScaleRatio)
         sceneRef.current.add(modelTop)
         sceneRef.current.add(modelBottom)
       } else {
@@ -195,54 +177,11 @@ function RoomDesigner() {
           model.position.set(0, 0, 0)
         }
 
+        model.scale.set(modelIncreaseScaleRatio, modelIncreaseScaleRatio, modelIncreaseScaleRatio)
         stufs.push(model)
         sceneRef.current.add(model)
       }
     }
-
-    // await loader.load(
-    //   'c_triple.gltf',
-    //   function (gltf) {
-    //     const model = gltf.scene
-    //     const boundingBox = new THREE.Box3().setFromObject(model)
-
-    //     // model.traverse((o) => {
-    //     //   if (o.isMesh) o.material = mat
-    //     // })
-
-    //     const size = new THREE.Vector3()
-    //     boundingBox.getSize(size)
-
-    //     model.position.set(0, 0, 0)
-
-    //     stufs.push(model)
-
-    //     // const clonedModel = model.clone()
-    //     // clonedModel.position.set(size.x, 0, 0)
-    //     // scene.add(clonedModel)
-
-    //     scene.add(model)
-    //   },
-    //   undefined,
-    //   function (error) {
-    //     console.error(error)
-    //   }
-    // )
-
-    // console.log('stufs', stufs)
-
-    // const dragControls = new DragControls([...stufs], camera, renderer.domElement)
-
-    // dragControls.addEventListener('dragstart', function (event) {
-    //   console.log(1111)
-    //   controls.enabled = false
-    //   // event.object.material.emissive.set(0xdd0000)
-    // })
-
-    // dragControls.addEventListener('dragend', function (event) {
-    //   // event.object.material.emissive.set(0x000000)
-    //   controls.enabled = true
-    // })
   }
 
   useEffect(() => {
