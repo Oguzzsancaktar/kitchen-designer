@@ -84,8 +84,8 @@ function FloorDesigner() {
 
   const drawDots = () => {
     roomArea.forEach((item) => {
-      const geometry = new THREE.SphereGeometry(0.05, 32, 32)
-      const material = new THREE.MeshBasicMaterial({ color: 0xff0000 })
+      const geometry = new THREE.SphereGeometry(0.15, 32, 32)
+      const material = new THREE.MeshBasicMaterial({ color: 0x4bcdd1 })
       const sphere = new THREE.Mesh(geometry, material)
 
       sphere.position.x = item.x
@@ -104,6 +104,7 @@ function FloorDesigner() {
         setRoomArea((prev) => {
           const index = prev.findIndex((i) => i.x === item.x && i.y === item.y)
           const newItems = [...prev]
+
           newItems[index].x = x
           newItems[index].y = z
           return newItems
@@ -123,12 +124,20 @@ function FloorDesigner() {
       }
     })
 
-    const material = new THREE.LineBasicMaterial({ color: 0x0000ff })
+    const material = new THREE.LineBasicMaterial({
+      color: 0x3669ba,
+      linewidth: 5,
+      lineheight: 5,
+      linecap: 'round',
+      linejoin: 'round',
+    })
     const points = []
+
     const roomAreaForLines = [...roomArea, roomArea[0]]
     roomAreaForLines.forEach((item) => {
       points.push(new THREE.Vector3(item.x, 0.05, item.y))
     })
+
     const geometry = new THREE.BufferGeometry().setFromPoints(points)
     const line = new THREE.Line(geometry, material)
     sceneRef.current.add(line)
