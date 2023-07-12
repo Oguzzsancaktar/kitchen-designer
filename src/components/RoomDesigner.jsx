@@ -73,7 +73,7 @@ function RoomDesigner() {
       texture.repeat.set(2, 2)
     })
 
-    const texture3 = new THREE.TextureLoader().load('/src/assets/textures/wall-marble-texture.jpg', function (texture) {
+    const texture3 = new THREE.TextureLoader().load('/src/assets/textures/wall-texture.jpg', function (texture) {
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping
       texture.offset.set(0, 0)
       texture.repeat.set(2, 2)
@@ -97,7 +97,7 @@ function RoomDesigner() {
     var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
 
     // Yüzleri farklı malzemelerle oluşturun
-    var mesh = new THREE.Mesh(geometry, [material2, material3])
+    var mesh = new THREE.Mesh(geometry, [material3, material2])
 
     // const mesh = new THREE.Mesh(geometry, material)
     mesh.position.set(0, 0, 0)
@@ -113,7 +113,7 @@ function RoomDesigner() {
   }
 
   const loadModel = async () => {
-    const loader = new GLTFLoader().setPath('/src/assets/gltf/')
+    const loader = new GLTFLoader().setPath('/src/assets/gltf/blue/')
 
     const stufs = []
 
